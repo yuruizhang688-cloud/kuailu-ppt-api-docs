@@ -10,7 +10,8 @@ async function refresh() {
   button.disabled = true;
   status.textContent = '正在读取最近登记的接口地址…';
   try {
-    const response = await fetch(container.dataset.discovery + '?_=' + Date.now(), { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+    const address = new URL(container.dataset.discovery); address.searchParams.set('_', Date.now());
+    const response = await fetch(address, { headers: { Accept: 'application/vnd.github.raw+json' }, cache: 'no-store', signal: AbortSignal.timeout(15000) });
     if (!response.ok) throw new Error('Connection record unavailable');
     const record = await response.json();
     if (!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(record.base_url)) throw new Error('Invalid origin');

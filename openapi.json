@@ -10,8 +10,8 @@
       "url": "{api_base}",
       "variables": {
         "api_base": {
-          "default": "https://forward-celtic-tue-relative.trycloudflare.com",
-          "description": "调用前从 https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json 读取base_url替换此值；默认地址仅为文档发布时快照。"
+          "default": "https://solely-vote-adaptation-incidence.trycloudflare.com",
+          "description": "调用前从 https://api.github.com/repos/yuruizhang688-cloud/kuailu-ppt-api-docs/contents/connection.json?ref=runtime 读取base_url替换此值；默认地址仅为文档发布时快照。"
         }
       }
     }

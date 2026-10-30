@@ -14,9 +14,9 @@
 
 ## 先读取当前接口地址
 
-固定连接信息地址：https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json
+固定连接信息地址：https://api.github.com/repos/yuruizhang688-cloud/kuailu-ppt-api-docs/contents/connection.json?ref=runtime
 
-每次开始调用，先匿名 GET 上述地址，附加 ?_当前时间戳 避免使用缓存，读取 JSON 的 base_url 作为下文的 {API_BASE}。连接信息只记录最新登记地址，updated_at 不是实时在线证明。隧道重建后自动更新此记录，文档链接和 API Key 不变。若连接失败，重新读取 base_url，再用原 idempotency_key 和原请求重试；不要创建重复任务。
+每次开始调用，先匿名 GET 上述地址，设置请求头 Accept: application/vnd.github.raw+json，并附加 &_=当前时间戳 避免缓存，读取 JSON 的 base_url 作为下文的 {API_BASE}。连接信息只记录最新登记地址，updated_at 不是实时在线证明。隧道重建后自动更新此记录，文档链接和 API Key 不变。若连接失败，重新读取 base_url，再用原 idempotency_key 和原请求重试；不要创建重复任务。连接信息只在新任务开始或连接失败时读取，不要随每5秒任务轮询重复读取；遇到公共访问限流时稍后重试。
 
 ## 直接交给 Codex 的指令
 
@@ -78,13 +78,15 @@ HTTP 202 返回 job_id、report_id、status、template_version。idempotency_key
 
 ```python
 import json, pathlib, time, urllib.request, urllib.error, uuid, re
-DISCOVERY = "https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json"
+DISCOVERY = "https://api.github.com/repos/yuruizhang688-cloud/kuailu-ppt-api-docs/contents/connection.json?ref=runtime"
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 opener = urllib.request.build_opener(NoRedirect)
 def discover():
-    with urllib.request.urlopen(DISCOVERY + "?_=" + str(time.time_ns()), timeout=30) as r:
+    req = urllib.request.Request(DISCOVERY + ("&" if "?" in DISCOVERY else "?") + "_=" + str(time.time_ns()),
+        headers={"Accept": "application/vnd.github.raw+json"})
+    with urllib.request.urlopen(req, timeout=30) as r:
         base = json.load(r)["base_url"]
     if not re.fullmatch(r"https://[a-z0-9-]+\.trycloudflare\.com", base):
         raise ValueError("连接信息不是有效的服务地址")
