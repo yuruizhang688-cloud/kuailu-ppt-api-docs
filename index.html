@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>快鹭周报 API 调用说明</title><meta name="description" content="免登录查阅快鹭周报 API：认证、提交材料、查询任务、下载 PPTX 和全稿预览。">
+<link rel="alternate" type="text/markdown" href="./docs.md" title="Markdown 文档">
+<style>
+:root{color-scheme:light;font-family:MiSans,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;color:#17151f;background:#fff;font-size:16px;line-height:1.8}
+*{box-sizing:border-box}body{margin:0}a{color:#4f39f6;text-underline-offset:4px}a:hover{color:#3d25ce}:focus-visible{outline:2px solid #4f39f6;outline-offset:4px}
+#connection{margin-bottom:32px;padding-bottom:24px;border-bottom:1px solid #e6e3ed}button{min-height:44px;padding:8px 16px;border:1px solid #e6e3ed;border-radius:8px;background:#f4f1fd;color:#4f39f6;font:inherit;cursor:pointer}button:disabled{cursor:wait;opacity:.65}
+header{border-bottom:1px solid #e6e3ed;background:#fbfbfb}header>div{max-width:1216px;margin:auto;padding:20px 32px;display:flex;gap:20px;align-items:center;flex-wrap:wrap}header strong{margin-right:auto;font-weight:500}header a{font-size:14px}.badge{font-size:12px;color:#625d6c}
+.layout{max-width:1216px;margin:auto;display:grid;grid-template-columns:200px minmax(0,1fr);gap:48px;padding:48px 32px 80px}nav{position:sticky;top:24px;align-self:start;font-size:14px}nav span{color:#625d6c;display:block;margin-bottom:12px}nav a{display:block;padding:6px 0;text-decoration:none}main{min-width:0}h1{font-size:36px;line-height:1.3;font-weight:500;margin:0 0 24px}h2{font-size:26px;font-weight:500;border-top:1px solid #e6e3ed;padding-top:36px;margin:48px 0 20px;scroll-margin-top:24px}p{margin:16px 0;overflow-wrap:anywhere}.endpoint{font-size:15px;line-height:1.7;margin:28px 0 16px;padding:16px;background:#f4f1fd;border-radius:8px;overflow-wrap:anywhere;font-family:ui-monospace,Menlo,monospace;font-weight:500}blockquote{margin:20px 0;padding:24px;background:#f4f1fd;border-radius:12px}pre{padding:20px;background:#fbfbfb;border:1px solid #e6e3ed;border-radius:12px;overflow:auto;max-width:100%;font-size:13px;line-height:1.7}code{font-family:"Geist Mono",ui-monospace,Menlo,monospace}.table-wrap{max-width:100%;overflow:auto;margin:24px 0}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;vertical-align:top;padding:12px 14px;border-bottom:1px solid #e6e3ed}th{background:#fbfbfb;font-weight:500}td:first-child{min-width:130px;font-family:ui-monospace,Menlo,monospace}footer{font-size:13px;color:#625d6c;border-top:1px solid #e6e3ed;padding-top:24px;margin-top:48px}
+@media(max-width:760px){header>div{padding:16px;gap:12px}.layout{display:block;padding:28px 16px 48px}nav{position:static;border-bottom:1px solid #e6e3ed;padding-bottom:20px;margin-bottom:28px}nav a{display:inline-block;margin-right:20px}h1{font-size:28px}h2{font-size:23px}pre{padding:14px}}
+</style></head><body>
+<header><div><strong>快鹭周报 · API</strong><span class="badge">文档公开 · 调用需 Key</span><a href="./docs.md">Markdown 原文</a><a href="./openapi.json">OpenAPI JSON</a></div></header>
+<div class="layout"><nav aria-label="文档目录"><span>调用指南</span><a href="#section-1">先读取当前接口地址</a><a href="#section-2">直接交给 Codex 的指令</a><a href="#section-3">认证</a><a href="#section-4">四步调用</a><a href="#section-5">Python 示例（仅标准库）</a><a href="#section-6">限制与排错</a></nav><main><div id="connection" data-discovery="https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json"><p>本页由 GitHub Pages 独立托管，提供者电脑关机也可阅读。</p><p id="connection-status" role="status">正在读取最近登记的接口地址…</p><p><a href="https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json">查看连接信息 JSON</a> · <button id="refresh-connection" type="button">刷新接口地址</button></p></div><h1>快鹭周报 API 调用说明</h1>
+<p>接口基址：{API_BASE}</p>
+<p>在线说明：https://yuruizhang688-cloud.github.io/kuailu-ppt-api-docs/</p>
+<p>本文档免登录公开访问；接口 Key 由提供者私下发放。</p>
+<p>将在线说明链接和单独的「接口Key.txt」交给 Codex，即可按下述 HTTP 接口调用。不需要安装 Skill、MCP 插件、PPT 模板或生成软件。调用方 Codex 需要具备联网 HTTP 请求能力；输入材料仍需由使用者提供。</p>
+<p>本服务在提供者的电脑运行：原始材料由该电脑上的 Codex 统一整理，使用锁定的快鹭周报原生 React 模板、字体和导出引擎生成 PPTX。首批仅支持快鹭科技、CRM/会议两条产品线、W3 模板固定22页。PPT采用原生流程的整页图像导出，文字不能在 PowerPoint 内逐项编辑；修改内容需重新提交。</p>
+<p>文档由 GitHub Pages 独立托管，提供者电脑关机也可阅读。生成 API 在提供者电脑上运行。</p>
+<h2 id="section-1">先读取当前接口地址</h2>
+<p>固定连接信息地址：https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json</p>
+<p>每次开始调用，先匿名 GET 上述地址，附加 ?_当前时间戳 避免使用缓存，读取 JSON 的 base_url 作为下文的 {API_BASE}。连接信息只记录最新登记地址，updated_at 不是实时在线证明。隧道重建后自动更新此记录，文档链接和 API Key 不变。若连接失败，重新读取 base_url，再用原 idempotency_key 和原请求重试；不要创建重复任务。</p>
+<h2 id="section-2">直接交给 Codex 的指令</h2>
+<blockquote>请阅读这份 API 说明，使用我提供的接口Key调用远程快鹭周报生成服务。先从固定连接信息地址读取最新 base_url，再查询模板版本；连接失败时刷新地址并保留原幂等键重试。然后将我提供的本期完整材料作为 materials 提交，不要在本机另做一份 PPT。保留 idempotency_key 和 job_id，每5秒查询一次任务。needs_input 时向我索取返回的 missing 缺项；succeeded 时下载 pptx_url，并同时提供 preview_url 全稿预览。不要在聊天、日志或仓库中输出完整 Key。</blockquote>
+<h2 id="section-3">认证</h2>
+<p>所有 /v1/ 接口都需要以下请求头，API Key 是「接口Key.txt」中的整行文本：</p>
+<pre tabindex="0"><code>Authorization: Bearer &lt;API_KEY&gt;</code></pre>
+<p>POST 还需 Content-Type: application/json。Key 独立于提供者的 OpenAI 登录凭据；仅可查询自身创建的任务。请私下交付 Key。</p>
+<h2 id="section-4">四步调用</h2>
+<h3 class="endpoint">1. GET {API_BASE}/v1/templates</h3>
+<p>响应 templates[0] 包含 id、version、slide_count。每次新任务先读取最新 version，不要把示例版本写死。</p>
+<h3 class="endpoint">2. GET {API_BASE}/v1/templates/kuailu-weekly-w3</h3>
+<p>返回 pages（固定22页页序）、required_materials 和 content_schema（完整 JSON Schema）。材料需包含周期、汇报人、工作总结、监测指标与上期对比、平台/场景/竞品数据、引用来源、发文及渠道统计、品牌认知、下周计划及资料来源。词云可不提供；其他必填事实缺失时不会自动编造。</p>
+<h3 class="endpoint">3. POST {API_BASE}/v1/presentations</h3>
+<p>推荐材料模式，材料在服务端由同一 Codex 流程整理：</p>
+<pre tabindex="0"><code>{
+  &quot;template_id&quot;: &quot;kuailu-weekly-w3&quot;,
+  &quot;template_version&quot;: &quot;替换为步骤1返回的version&quot;,
+  &quot;idempotency_key&quot;: &quot;kuailu-20261030-v1&quot;,
+  &quot;materials&quot;: &quot;在此粘贴本期完整资料，支持文本、Markdown、CSV或JSON文本。仅写本周工作概述不足以生成22页报告。&quot;,
+  &quot;instructions&quot;: &quot;保持原文和数字，不补造事实；没有词云则留空。&quot;
+}</code></pre>
+<p>也可将 materials 替换为符合 content_schema 的完整 content 对象；此模式跳过 AI 整理，直接校验和渲染，instructions 不参与改写。content 和 materials 必须且只能提供一个。系统不读取调用者本地文件，也不抓取材料中的网址；先把附件解析成文本再提交。词云以 PNG/JPEG data URI 放入 content 的 image 字段，或留空字符串。</p>
+<p>HTTP 202 返回 job_id、report_id、status、template_version。idempotency_key 为8～100位字母、数字、下划线或短横线。同身份、同 idempotency_key、同请求重试只返回原任务；修改内容时更换 idempotency_key，认证用的 API Key 保持不变。请求超时先用原请求和原 idempotency_key 重试，不要重复创建。</p>
+<h3 class="endpoint">4. GET {API_BASE}/v1/jobs/&lt;job_id&gt;</h3>
+<p>每5秒查询一次。完整生成通常需要数分钟，AI 整理时间取决于材料长度和本机模型。任务持久保存，可稍后继续查询。</p>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">status</th><th scope="col">使用者动作</th></tr></thead><tbody><tr><td>queued / running</td><td>等待并继续查询；phase 和 completed_slides 显示进度</td></tr><tr><td>retry_wait</td><td>服务端正在自动重试，按 next_retry_at 继续查询，勿重复提交</td></tr><tr><td>needs_input</td><td>读取 missing，补齐资料后用新的 idempotency_key 提交完整材料</td></tr><tr><td>succeeded</td><td>下载 pptx_url，同时打开 preview_url；validation_url 提供渲染检查结果</td></tr><tr><td>failed</td><td>保存 job_id 和 error，联系提供者检查运行环境</td></tr></tbody></table></div>
+<p>成功结果含22页 PPTX及相同 report_id、相同页序和组件的 WeeklyDeckPreview 全稿静态预览。点击每页缩略图可进入单页。返回的文件/预览链接24小时有效，持有链接者可访问该报告；过期后再次 GET 任务即可刷新。local_preview_url 仅供提供者电脑使用，异地使用 preview_url。</p>
+<h2 id="section-5">Python 示例（仅标准库）</h2>
+<p>把 Key 文件和本期材料 materials.txt 放在同一目录。以下脚本依次提交、等待、下载，重复运行会复用保存在 request.json 中的请求，避免网络中断导致重复生成。修改材料后，先重命名旧 request.json，再运行以创建新任务。</p>
+<pre tabindex="0"><code>import json, pathlib, time, urllib.request, urllib.error, uuid, re
+DISCOVERY = &quot;https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json&quot;
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+opener = urllib.request.build_opener(NoRedirect)
+def discover():
+    with urllib.request.urlopen(DISCOVERY + &quot;?_=&quot; + str(time.time_ns()), timeout=30) as r:
+        base = json.load(r)[&quot;base_url&quot;]
+    if not re.fullmatch(r&quot;https://[a-z0-9-]+\.trycloudflare\.com&quot;, base):
+        raise ValueError(&quot;连接信息不是有效的服务地址&quot;)
+    return base
+BASE = discover()
+key = pathlib.Path(&quot;接口Key.txt&quot;).read_text(encoding=&quot;utf-8&quot;).strip()
+def call(route, body=None):
+    global BASE
+    for attempt in range(10):
+        try:
+            req = urllib.request.Request(BASE + route,
+                data=None if body is None else json.dumps(body, ensure_ascii=False).encode(),
+                headers={&quot;Authorization&quot;: &quot;Bearer &quot; + key, &quot;Content-Type&quot;: &quot;application/json&quot;})
+            with opener.open(req, timeout=60) as response:
+                return json.load(response)
+        except urllib.error.HTTPError as e:
+            if e.code not in (429, 502, 503, 504, 530):
+                raise
+        except (urllib.error.URLError, TimeoutError):
+            pass
+        if attempt == 9:
+            raise RuntimeError(&quot;暂时无法连接；保留request.json，稍后运行可继续原任务&quot;)
+        time.sleep(min(30, 2 ** attempt))
+        try:
+            BASE = discover()
+        except (urllib.error.URLError, TimeoutError):
+            pass
+saved = pathlib.Path(&quot;request.json&quot;)
+if saved.exists():
+    request = json.loads(saved.read_text(encoding=&quot;utf-8&quot;))
+else:
+    template = call(&quot;/v1/templates&quot;)[&quot;templates&quot;][0]
+    request = {&quot;template_id&quot;: template[&quot;id&quot;], &quot;template_version&quot;: template[&quot;version&quot;],
+        &quot;idempotency_key&quot;: str(uuid.uuid4()),
+        &quot;materials&quot;: pathlib.Path(&quot;materials.txt&quot;).read_text(encoding=&quot;utf-8&quot;)}
+    saved.write_text(json.dumps(request, ensure_ascii=False), encoding=&quot;utf-8&quot;)
+job = call(&quot;/v1/presentations&quot;, request)
+print(&quot;任务编号：&quot;, job[&quot;job_id&quot;])
+while job[&quot;status&quot;] in (&quot;queued&quot;, &quot;running&quot;, &quot;retry_wait&quot;):
+    time.sleep(5)
+    job = call(&quot;/v1/jobs/&quot; + job[&quot;job_id&quot;])
+if job[&quot;status&quot;] == &quot;succeeded&quot;:
+    with urllib.request.urlopen(job[&quot;pptx_url&quot;], timeout=120) as response:
+        pathlib.Path(&quot;快鹭周报.pptx&quot;).write_bytes(response.read())
+    print(&quot;全稿预览：&quot;, job[&quot;preview_url&quot;])
+else:
+    print(json.dumps(job, ensure_ascii=False, indent=2))</code></pre>
+<h2 id="section-6">限制与排错</h2>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">HTTP 状态</th><th scope="col">含义</th></tr></thead><tbody><tr><td>400</td><td>JSON、字段、计数/比例或内容不符合规则；查看 error.message / error.details</td></tr><tr><td>401</td><td>Key 缺失、错误或已被撤销</td></tr><tr><td>403</td><td>请求 Host / Origin 不在允许范围；使用本文档地址直接调用</td></tr><tr><td>404</td><td>路径/任务不存在，或任务属于其他 Key</td></tr><tr><td>409</td><td>模板版本已变更，或同一幂等键对应不同内容</td></tr><tr><td>413 / 415</td><td>请求超过10MiB，或 Content-Type 不是 application/json</td></tr><tr><td>429</td><td>每分钟超过120次请求或待处理任务超过20个；延迟后重试</td></tr><tr><td>502 / 连接失败</td><td>提供者电脑离线、隧道中断或地址已更换</td></tr></tbody></table></div>
+<p>materials 上限150000字符；instructions 上限8000字符；单张词云 data URI 上限2800000字符。完整字段限制以 content_schema 为准。单机任务按顺序运行。服务端运行错误最多尝试10次，退避等待时间为1秒、2秒、4秒、8秒、16秒、10分钟、1小时、6小时、6小时；业务缺项 needs_input 不自动补造。</p>
+<p>公开 Markdown：https://yuruizhang688-cloud.github.io/kuailu-ppt-api-docs/docs.md；公开 OpenAPI 3.1：https://yuruizhang688-cloud.github.io/kuailu-ppt-api-docs/openapi.json。以上文档均无需 Key，不包含任何接口 Key 或报告内容。原有 /v1/openapi.json 保留，仍需 Bearer Key。可选 MCP 地址为 {API_BASE}/mcp，普通 API 调用不需要配置 MCP。</p>
+<p>本文档独立于提供者电脑。API使用临时HTTPS隧道；后台会自动重连并更新固定连接信息。 提供者电脑需开机、登录macOS并联网；后台运行期间阻止自动空闲睡眠，合盖、手动睡眠、关机和注销仍会中断本机生成。材料模式还需要本机 Codex 登录有效及可用额度。网络恢复与地址更新可能需要数分钟，客户端应按上述方式重试。临时隧道没有可用性保证；需要固定API域名时应切换正式隧道。</p><footer>本文档免登录访问。接口 Key 请向提供者获取，并单独保管。</footer></main></div>
+<script src="./connection.js" defer></script>
+</body></html>

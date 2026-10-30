@@ -1,0 +1,1851 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "快鹭周报 API",
+    "version": "1.0.0",
+    "description": "统一调用服务端Codex与原生22页模板，异步生成PPTX和全稿静态预览。"
+  },
+  "servers": [
+    {
+      "url": "{api_base}",
+      "variables": {
+        "api_base": {
+          "default": "https://forward-celtic-tue-relative.trycloudflare.com",
+          "description": "调用前从 https://raw.githubusercontent.com/yuruizhang688-cloud/kuailu-ppt-api-docs/runtime/connection.json 读取base_url替换此值；默认地址仅为文档发布时快照。"
+        }
+      }
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "paths": {
+    "/v1/templates": {
+      "get": {
+        "operationId": "listTemplates",
+        "summary": "查询模板与当前锁定版本",
+        "responses": {
+          "200": {
+            "description": "模板列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入不符合内容规则或JSON无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或无效API Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在或属于其他身份",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "模板版本或幂等键冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求体超过10MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "超过每分钟120请求或队列已满",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/templates/{template_id}": {
+      "get": {
+        "operationId": "getTemplate",
+        "summary": "获取22页目录与content完整JSON Schema",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "const": "kuailu-weekly-w3"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "模板详细说明",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入不符合内容规则或JSON无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或无效API Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在或属于其他身份",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "模板版本或幂等键冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求体超过10MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "超过每分钟120请求或队列已满",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/presentations": {
+      "post": {
+        "operationId": "createPresentation",
+        "summary": "提交content或materials，返回异步任务",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "template_id": {
+                    "type": "string",
+                    "const": "kuailu-weekly-w3"
+                  },
+                  "template_version": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "idempotency_key": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{8,100}$"
+                  },
+                  "content": {
+                    "type": "object",
+                    "properties": {
+                      "meta": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 24
+                          },
+                          "brand": {
+                            "type": "string",
+                            "const": "快鹭科技"
+                          },
+                          "period": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 36
+                          },
+                          "monitoringPeriod": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 36
+                          },
+                          "modules": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 36
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "brand",
+                          "period",
+                          "monitoringPeriod",
+                          "modules"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "workSummary": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 160
+                          },
+                          "description": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "columns": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 36
+                                },
+                                "items": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 160
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 5
+                                }
+                              },
+                              "required": [
+                                "title",
+                                "items"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "description",
+                          "columns"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "nextPlan": {
+                        "type": "object",
+                        "properties": {
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 160
+                          },
+                          "intro": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "rows": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "module": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 36
+                                },
+                                "tasks": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 160
+                                  },
+                                  "minItems": 1,
+                                  "maxItems": 5
+                                }
+                              },
+                              "required": [
+                                "module",
+                                "tasks"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 3,
+                            "maxItems": 3
+                          },
+                          "supportTitle": {
+                            "type": "string",
+                            "const": ""
+                          },
+                          "supportItems": {
+                            "type": "array",
+                            "items": {
+                              "not": {}
+                            },
+                            "minItems": 0,
+                            "maxItems": 0
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "intro",
+                          "rows",
+                          "supportTitle",
+                          "supportItems"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "weekly": {
+                        "type": "object",
+                        "properties": {
+                          "presenter": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 36
+                          },
+                          "department": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 36
+                          },
+                          "monitoring": {
+                            "type": "object",
+                            "properties": {
+                              "kpis": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "label": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 36
+                                    },
+                                    "value": {
+                                      "type": "string",
+                                      "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                    },
+                                    "count": {
+                                      "type": "string",
+                                      "pattern": "^\\d+\\s*\\/\\s*\\d+$"
+                                    },
+                                    "baseline": {
+                                      "type": "string",
+                                      "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                    },
+                                    "delta": {
+                                      "type": "string",
+                                      "pattern": "^[+-]?\\d{1,3}(?:\\.\\d{1,2})?pp$"
+                                    }
+                                  },
+                                  "required": [
+                                    "label",
+                                    "value",
+                                    "count",
+                                    "baseline",
+                                    "delta"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "minItems": 3,
+                                "maxItems": 3
+                              },
+                              "scope": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 160
+                              },
+                              "description": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              },
+                              "conclusion": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              }
+                            },
+                            "required": [
+                              "kpis",
+                              "scope",
+                              "description",
+                              "conclusion"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "platformRows": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "platform": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 36
+                                },
+                                "rank": {
+                                  "type": "string",
+                                  "pattern": "^\\d{1,4}$"
+                                },
+                                "metrics": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "array",
+                                    "minItems": 3,
+                                    "maxItems": 3,
+                                    "items": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 36
+                                      },
+                                      {
+                                        "type": "string",
+                                        "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                      },
+                                      {
+                                        "type": "string",
+                                        "pattern": "^[+-]?\\d{1,3}(?:\\.\\d{1,2})?pp$"
+                                      }
+                                    ]
+                                  },
+                                  "minItems": 3,
+                                  "maxItems": 3
+                                }
+                              },
+                              "required": [
+                                "platform",
+                                "rank",
+                                "metrics"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "minItems": 4,
+                            "maxItems": 4
+                          },
+                          "platformConclusion": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "scenes": {
+                            "type": "object",
+                            "properties": {
+                              "crm": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "conclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  },
+                                  "scenes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "rate": {
+                                          "type": "string",
+                                          "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                        },
+                                        "baseline": {
+                                          "type": "string",
+                                          "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                        },
+                                        "delta": {
+                                          "type": "string",
+                                          "pattern": "^[+-]?\\d{1,3}(?:\\.\\d{1,2})?pp$"
+                                        },
+                                        "prompts": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 160
+                                          },
+                                          "maxItems": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "rate",
+                                        "baseline",
+                                        "delta",
+                                        "prompts"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 4
+                                  },
+                                  "matrix": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "scene": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "promptCount": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 100000000
+                                        },
+                                        "values": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                          },
+                                          "minItems": 4,
+                                          "maxItems": 4
+                                        }
+                                      },
+                                      "required": [
+                                        "scene",
+                                        "promptCount",
+                                        "values"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 4
+                                  },
+                                  "matrixConclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "conclusion",
+                                  "scenes",
+                                  "matrix",
+                                  "matrixConclusion"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "meeting": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "conclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  },
+                                  "scenes": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "rate": {
+                                          "type": "string",
+                                          "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                        },
+                                        "baseline": {
+                                          "type": "string",
+                                          "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                        },
+                                        "delta": {
+                                          "type": "string",
+                                          "pattern": "^[+-]?\\d{1,3}(?:\\.\\d{1,2})?pp$"
+                                        },
+                                        "prompts": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "minLength": 1,
+                                            "maxLength": 160
+                                          },
+                                          "maxItems": 3
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "rate",
+                                        "baseline",
+                                        "delta",
+                                        "prompts"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 4
+                                  },
+                                  "matrix": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "scene": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "promptCount": {
+                                          "type": "integer",
+                                          "minimum": 0,
+                                          "maximum": 100000000
+                                        },
+                                        "values": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "string",
+                                            "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                          },
+                                          "minItems": 4,
+                                          "maxItems": 4
+                                        }
+                                      },
+                                      "required": [
+                                        "scene",
+                                        "promptCount",
+                                        "values"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 4
+                                  },
+                                  "matrixConclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "conclusion",
+                                  "scenes",
+                                  "matrix",
+                                  "matrixConclusion"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "crm",
+                              "meeting"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "competitors": {
+                            "type": "object",
+                            "properties": {
+                              "crm": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "selfCurrent": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "selfRank": {
+                                    "type": "string",
+                                    "pattern": "^\\d{1,4}$"
+                                  },
+                                  "selfRate": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  },
+                                  "selfChange": {
+                                    "type": "string",
+                                    "pattern": "^(?:持平|—|[↑↓]\\s*\\d{1,4})$"
+                                  },
+                                  "conclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  },
+                                  "rows": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "array",
+                                      "minItems": 4,
+                                      "maxItems": 4,
+                                      "items": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^\\d{1,4}$"
+                                        },
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:持平|—|[↑↓]\\s*\\d{1,4})$"
+                                        }
+                                      ]
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 10
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "selfCurrent",
+                                  "selfRank",
+                                  "selfRate",
+                                  "selfChange",
+                                  "conclusion",
+                                  "rows"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "meeting": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "selfCurrent": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "selfRank": {
+                                    "type": "string",
+                                    "pattern": "^\\d{1,4}$"
+                                  },
+                                  "selfRate": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 100
+                                  },
+                                  "selfChange": {
+                                    "type": "string",
+                                    "pattern": "^(?:持平|—|[↑↓]\\s*\\d{1,4})$"
+                                  },
+                                  "conclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  },
+                                  "rows": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "array",
+                                      "minItems": 4,
+                                      "maxItems": 4,
+                                      "items": [
+                                        {
+                                          "type": "string",
+                                          "pattern": "^\\d{1,4}$"
+                                        },
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        {
+                                          "type": "string",
+                                          "pattern": "^(?:持平|—|[↑↓]\\s*\\d{1,4})$"
+                                        }
+                                      ]
+                                    },
+                                    "minItems": 1,
+                                    "maxItems": 10
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "selfCurrent",
+                                  "selfRank",
+                                  "selfRate",
+                                  "selfChange",
+                                  "conclusion",
+                                  "rows"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "crm",
+                              "meeting"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "rankNote": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "citationSources": {
+                            "type": "object",
+                            "properties": {
+                              "crm": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "totalSources": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 100000000
+                                  },
+                                  "top5Concentration": {
+                                    "type": "string",
+                                    "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                  },
+                                  "overall": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "value": {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        "share": {
+                                          "type": "string",
+                                          "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "value",
+                                        "share"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 6,
+                                    "maxItems": 6
+                                  },
+                                  "platforms": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "platform": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "sources": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "array",
+                                            "minItems": 2,
+                                            "maxItems": 2,
+                                            "items": [
+                                              {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 36
+                                              },
+                                              {
+                                                "type": "string",
+                                                "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                              }
+                                            ]
+                                          },
+                                          "minItems": 5,
+                                          "maxItems": 5
+                                        }
+                                      },
+                                      "required": [
+                                        "platform",
+                                        "sources"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 4,
+                                    "maxItems": 4
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "totalSources",
+                                  "top5Concentration",
+                                  "overall",
+                                  "platforms"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "meeting": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "totalSources": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "maximum": 100000000
+                                  },
+                                  "top5Concentration": {
+                                    "type": "string",
+                                    "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                  },
+                                  "overall": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "value": {
+                                          "type": "number",
+                                          "minimum": 0,
+                                          "maximum": 100
+                                        },
+                                        "share": {
+                                          "type": "string",
+                                          "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                        }
+                                      },
+                                      "required": [
+                                        "name",
+                                        "value",
+                                        "share"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 6,
+                                    "maxItems": 6
+                                  },
+                                  "platforms": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "platform": {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        "sources": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "array",
+                                            "minItems": 2,
+                                            "maxItems": 2,
+                                            "items": [
+                                              {
+                                                "type": "string",
+                                                "minLength": 1,
+                                                "maxLength": 36
+                                              },
+                                              {
+                                                "type": "string",
+                                                "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                              }
+                                            ]
+                                          },
+                                          "minItems": 5,
+                                          "maxItems": 5
+                                        }
+                                      },
+                                      "required": [
+                                        "platform",
+                                        "sources"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "minItems": 4,
+                                    "maxItems": 4
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "totalSources",
+                                  "top5Concentration",
+                                  "overall",
+                                  "platforms"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "crm",
+                              "meeting"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "publishing": {
+                            "type": "object",
+                            "properties": {
+                              "metrics": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 24
+                                    },
+                                    "label": {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 36
+                                    }
+                                  },
+                                  "required": [
+                                    "value",
+                                    "label"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "minItems": 4,
+                                "maxItems": 4
+                              },
+                              "description": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 500
+                              },
+                              "observations": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 160
+                                },
+                                "minItems": 3,
+                                "maxItems": 3
+                              }
+                            },
+                            "required": [
+                              "metrics",
+                              "description",
+                              "observations"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "channels": {
+                            "type": "object",
+                            "properties": {
+                              "market": {
+                                "type": "array",
+                                "items": {
+                                  "type": "array",
+                                  "minItems": 4,
+                                  "maxItems": 4,
+                                  "items": [
+                                    {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 36
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100000000
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100000000
+                                    },
+                                    {
+                                      "type": "string",
+                                      "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                    }
+                                  ]
+                                },
+                                "minItems": 2,
+                                "maxItems": 8
+                              },
+                              "sales": {
+                                "type": "array",
+                                "items": {
+                                  "type": "array",
+                                  "minItems": 4,
+                                  "maxItems": 4,
+                                  "items": [
+                                    {
+                                      "type": "string",
+                                      "minLength": 1,
+                                      "maxLength": 36
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100000000
+                                    },
+                                    {
+                                      "type": "integer",
+                                      "minimum": 0,
+                                      "maximum": 100000000
+                                    },
+                                    {
+                                      "type": "string",
+                                      "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                    }
+                                  ]
+                                },
+                                "minItems": 2,
+                                "maxItems": 4
+                              }
+                            },
+                            "required": [
+                              "market",
+                              "sales"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "perception": {
+                            "type": "object",
+                            "properties": {
+                              "overall": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "overall": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                  },
+                                  "platforms": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "array",
+                                      "minItems": 3,
+                                      "maxItems": 3,
+                                      "items": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                            },
+                                            {
+                                              "type": "string",
+                                              "const": "未提及"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                            },
+                                            {
+                                              "type": "string",
+                                              "const": "未提及"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    "minItems": 4,
+                                    "maxItems": 4
+                                  },
+                                  "image": {
+                                    "type": "string",
+                                    "maxLength": 2800000
+                                  },
+                                  "conclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "overall",
+                                  "platforms",
+                                  "image",
+                                  "conclusion"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "crm": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "overall": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                  },
+                                  "platforms": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "array",
+                                      "minItems": 3,
+                                      "maxItems": 3,
+                                      "items": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                            },
+                                            {
+                                              "type": "string",
+                                              "const": "未提及"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                            },
+                                            {
+                                              "type": "string",
+                                              "const": "未提及"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    "minItems": 4,
+                                    "maxItems": 4
+                                  },
+                                  "image": {
+                                    "type": "string",
+                                    "maxLength": 2800000
+                                  },
+                                  "conclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "overall",
+                                  "platforms",
+                                  "image",
+                                  "conclusion"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "meeting": {
+                                "type": "object",
+                                "properties": {
+                                  "product": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 36
+                                  },
+                                  "overall": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string",
+                                      "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                    },
+                                    "minItems": 3,
+                                    "maxItems": 3
+                                  },
+                                  "platforms": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "array",
+                                      "minItems": 3,
+                                      "maxItems": 3,
+                                      "items": [
+                                        {
+                                          "type": "string",
+                                          "minLength": 1,
+                                          "maxLength": 36
+                                        },
+                                        {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                            },
+                                            {
+                                              "type": "string",
+                                              "const": "未提及"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "anyOf": [
+                                            {
+                                              "type": "string",
+                                              "pattern": "^(?:100(?:\\.0{1,2})?|\\d{1,2}(?:\\.\\d{1,2})?)%$"
+                                            },
+                                            {
+                                              "type": "string",
+                                              "const": "未提及"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    "minItems": 4,
+                                    "maxItems": 4
+                                  },
+                                  "image": {
+                                    "type": "string",
+                                    "maxLength": 2800000
+                                  },
+                                  "conclusion": {
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                  }
+                                },
+                                "required": [
+                                  "product",
+                                  "overall",
+                                  "platforms",
+                                  "image",
+                                  "conclusion"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "overall",
+                              "crm",
+                              "meeting"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "presenter",
+                          "department",
+                          "monitoring",
+                          "platformRows",
+                          "platformConclusion",
+                          "scenes",
+                          "competitors",
+                          "rankNote",
+                          "citationSources",
+                          "publishing",
+                          "channels",
+                          "perception"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "pageSources": {
+                        "type": "object",
+                        "properties": {
+                          "00-cover": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "00a-directory": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "02-work-summary": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "04-monitoring-divider": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "05-monitoring-overview": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "06-platform-kpi": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "07-crm-scene-overview": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "08-crm-scene-platform": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "09-meeting-scene-overview": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "10-meeting-scene-platform": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "11-crm-competitors": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "12-meeting-competitors": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "13-crm-platform-citation-sources": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "13a-meeting-platform-citation-sources": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "14-publishing-overview": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "16-citation-channel": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "17-overall-perception": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "18-crm-perception": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "19-meeting-perception": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "20-plan-divider": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "21-next-plan": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "99-back-cover": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          }
+                        },
+                        "required": [
+                          "00-cover",
+                          "00a-directory",
+                          "02-work-summary",
+                          "04-monitoring-divider",
+                          "05-monitoring-overview",
+                          "06-platform-kpi",
+                          "07-crm-scene-overview",
+                          "08-crm-scene-platform",
+                          "09-meeting-scene-overview",
+                          "10-meeting-scene-platform",
+                          "11-crm-competitors",
+                          "12-meeting-competitors",
+                          "13-crm-platform-citation-sources",
+                          "13a-meeting-platform-citation-sources",
+                          "14-publishing-overview",
+                          "16-citation-channel",
+                          "17-overall-perception",
+                          "18-crm-perception",
+                          "19-meeting-perception",
+                          "20-plan-divider",
+                          "21-next-plan",
+                          "99-back-cover"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "meta",
+                      "workSummary",
+                      "nextPlan",
+                      "weekly",
+                      "pageSources"
+                    ],
+                    "additionalProperties": false,
+                    "description": "完整的已确认结构化内容。与 materials 二选一。"
+                  },
+                  "materials": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 150000,
+                    "description": "原始材料的文本、Markdown、CSV 或 JSON，由服务端 Codex 按统一指令整理。"
+                  },
+                  "instructions": {
+                    "type": "string",
+                    "maxLength": 8000
+                  }
+                },
+                "required": [
+                  "template_id",
+                  "template_version",
+                  "idempotency_key"
+                ],
+                "additionalProperties": false,
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "oneOf": [
+                  {
+                    "required": [
+                      "content"
+                    ],
+                    "not": {
+                      "required": [
+                        "materials"
+                      ]
+                    }
+                  },
+                  {
+                    "required": [
+                      "materials"
+                    ],
+                    "not": {
+                      "required": [
+                        "content"
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "已接受任务；同身份同幂等键同请求只创建一次",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入不符合内容规则或JSON无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或无效API Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在或属于其他身份",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "模板版本或幂等键冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求体超过10MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "超过每分钟120请求或队列已满",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "operationId": "getJob",
+        "summary": "查询进度、缺项及PPTX/预览链接",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "任务状态；成功含pptx_url、preview_url、validation_url",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "输入不符合内容规则或JSON无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "缺少或无效API Key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "资源不存在或属于其他身份",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "模板版本或幂等键冲突",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "请求体超过10MiB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "超过每分钟120请求或队列已满",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
