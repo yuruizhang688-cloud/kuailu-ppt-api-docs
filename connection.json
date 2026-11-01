@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "base_url": "https://simulations-follows-solaris-rest.trycloudflare.com",
+  "base_url": "https://dirt-steady-signed-prevent.trycloudflare.com",
   "docs_url": "https://yuruizhang688-cloud.github.io/kuailu-ppt-api-docs/",
-  "updated_at": "2026-11-01T05:11:11.692Z",
+  "updated_at": "2026-11-01T07:21:56.082Z",
   "temporary": true,
   "instruction": "每次新任务读取base_url；连接失败时重新读取并使用原idempotency_key重试。updated_at仅为地址更新时间，不代表实时在线状态。"
 }
