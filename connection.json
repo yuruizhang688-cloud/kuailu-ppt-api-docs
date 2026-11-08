@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "base_url": "https://screenshots-civil-departmental-encryption.trycloudflare.com",
+  "base_url": "https://wave-agreements-bar-dale.trycloudflare.com",
   "docs_url": "https://yuruizhang688-cloud.github.io/kuailu-ppt-api-docs/",
-  "updated_at": "2026-11-08T21:19:27.282Z",
+  "updated_at": "2026-11-08T23:45:57.138Z",
   "temporary": true,
   "instruction": "每次新任务读取base_url；连接失败时重新读取并使用原idempotency_key重试。updated_at仅为地址更新时间，不代表实时在线状态。"
 }
