@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "base_url": "https://ref-means-fred-incomplete.trycloudflare.com",
+  "base_url": "https://attempting-jungle-mailed-catalogue.trycloudflare.com",
   "docs_url": "https://yuruizhang688-cloud.github.io/kuailu-ppt-api-docs/",
-  "updated_at": "2026-11-10T14:00:29.858Z",
+  "updated_at": "2026-11-10T21:22:21.214Z",
   "temporary": true,
   "instruction": "每次新任务读取base_url；连接失败时重新读取并使用原idempotency_key重试。updated_at仅为地址更新时间，不代表实时在线状态。"
 }
